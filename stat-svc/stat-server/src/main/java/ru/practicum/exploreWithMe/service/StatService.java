@@ -51,5 +51,4 @@ public class StatService {
         log.info("Получена общая статистика за период для указанных URI");
         return endpointHitMapper.toStatisticsDtoList(statRepository.getStatisticsForPeriodAndUris(start, end, uris));
     }
-
 }

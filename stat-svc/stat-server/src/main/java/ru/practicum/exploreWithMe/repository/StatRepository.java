@@ -33,6 +33,7 @@ public interface StatRepository extends JpaRepository<EndpointHits, Long> {
     @Query("SELECT new ru.practicum.exploreWithMe.model.Statistics(e.app, e.uri, COUNT(e)) " +
             "FROM EndpointHits e " +
             "WHERE e.timestamp BETWEEN :start AND :end " +
-            "GROUP BY e.app, e.uri")
+            "GROUP BY e.app, e.uri " +
+            "ORDER BY COUNT(e) DESC")
     List<Statistics> getStatisticsForPeriod(LocalDateTime start, LocalDateTime end);
 }
