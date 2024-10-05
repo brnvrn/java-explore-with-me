@@ -38,17 +38,17 @@ public class StatService {
         if (unique) {
             if (uris.isEmpty()) {
                 log.info("Получены уникальные IP статистики за период без фильтрации по URI");
-                return endpointHitMapper.convertToViewStatsDtoList(statRepository.getUniqueIpStatisticsForPeriod(start, end));
+                return endpointHitMapper.toStatisticsDtoList(statRepository.getUniqueIpStatisticsForPeriod(start, end));
             }
             log.info("Получены уникальные IP статистики за период для указанных URI");
-            return endpointHitMapper.convertToViewStatsDtoList(statRepository.getUniqueIpStatisticsForPeriodAndUris(start, end, uris));
+            return endpointHitMapper.toStatisticsDtoList(statRepository.getUniqueIpStatisticsForPeriodAndUris(start, end, uris));
         }
         if (uris.isEmpty()) {
             log.info("Получена общая статистика за период без фильтрации по URI");
-            return endpointHitMapper.convertToViewStatsDtoList(statRepository.getStatisticsForPeriod(start, end));
+            return endpointHitMapper.toStatisticsDtoList(statRepository.getStatisticsForPeriod(start, end));
         }
         log.info("Получена общая статистика за период для указанных URI");
-        return endpointHitMapper.convertToViewStatsDtoList(statRepository.getStatisticsForPeriodAndUris(start, end, uris));
+        return endpointHitMapper.toStatisticsDtoList(statRepository.getStatisticsForPeriodAndUris(start, end, uris));
     }
 
 }

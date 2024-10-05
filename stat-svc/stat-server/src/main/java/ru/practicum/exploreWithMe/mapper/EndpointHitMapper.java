@@ -16,5 +16,5 @@ public interface EndpointHitMapper {
 
     StatisticsDto toStatisticsDto(Statistics statistics);
 
-    List<StatisticsDto> convertToViewStatsDtoList(List<Statistics> stats);
+    List<StatisticsDto> toStatisticsDtoList(List<Statistics> stats);
 }
