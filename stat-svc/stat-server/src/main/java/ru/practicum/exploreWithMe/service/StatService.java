@@ -12,6 +12,7 @@ import ru.practicum.exploreWithMe.repository.StatRepository;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Objects;
 
 @Service
 @Slf4j
@@ -36,14 +37,14 @@ public class StatService {
             throw new IllegalArgumentException("Параметр 'start' должен быть раньше 'end'.");
         }
         if (unique) {
-            if (uris.isEmpty()) {
+            if (Objects.isNull(uris) || uris.isEmpty()) {
                 log.info("Получены уникальные IP статистики за период без фильтрации по URI");
                 return endpointHitMapper.toStatisticsDtoList(statRepository.getUniqueIpStatisticsForPeriod(start, end));
             }
             log.info("Получены уникальные IP статистики за период для указанных URI");
             return endpointHitMapper.toStatisticsDtoList(statRepository.getUniqueIpStatisticsForPeriodAndUris(start, end, uris));
         }
-        if (uris.isEmpty()) {
+        if (Objects.isNull(uris) || uris.isEmpty()) {
             log.info("Получена общая статистика за период без фильтрации по URI");
             return endpointHitMapper.toStatisticsDtoList(statRepository.getStatisticsForPeriod(start, end));
         }
