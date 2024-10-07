@@ -31,8 +31,13 @@ public class StatClient {
     }
 
     public ResponseEntity<Object> getStats(LocalDateTime start, LocalDateTime end, @Nullable String[] uris, @Nullable Boolean unique) {
-        assert uris != null;
-        assert unique != null;
+        if (uris == null) {
+            throw new IllegalArgumentException("Параметр uris не может быть null");
+        }
+        if (unique == null) {
+            throw new IllegalArgumentException("Параметр unique не может быть null");
+        }
+
         Map<String, Object> parameters = Map.of(
                 "start", start,
                 "end", end,
