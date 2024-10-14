@@ -13,6 +13,7 @@ public interface CompilationRepository extends JpaRepository<Compilation, Long> 
     default Compilation findCompilationById(Long compilationId) {
         return findById(compilationId).orElseThrow(() -> new NotFoundException("Такой подборки не существует"));
     }
+
     @Query("SELECT c FROM Compilation c WHERE (c.pinned = :pinned OR :pinned IS NULL)")
     Page<Compilation> findByPinned(@Param("pinned") Boolean pinned, Pageable pageable);
 }
