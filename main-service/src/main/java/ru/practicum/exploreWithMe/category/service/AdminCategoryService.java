@@ -62,7 +62,6 @@ public class AdminCategoryService {
         if (!eventList.isEmpty()) {
             throw new CategoryDuplicateException("Невозможно удалить категорию, так как она связана с событиями.");
         }
-        uniqueCategories.remove(catId);
         log.info("Удаление категории с id={}", catId);
         categoryRepository.deleteById(catId);
     }

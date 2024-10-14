@@ -29,6 +29,7 @@ import ru.practicum.exploreWithMe.user.repository.UserRepository;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
 @Slf4j
 @Service
@@ -59,7 +60,7 @@ public class PrivateEventService {
     public EventDto getEventByIdPrivate(Long userId, Long eventId) {
         userRepository.findUserById(userId);
         Event event = eventRepository.findEventById(eventId);
-        if (event.getInitiator().getId() != userId) {
+        if (!Objects.equals(event.getInitiator().getId(), userId)) {
             throw new NotInitiatorException("Просмотр возможен только инициатору события");
         }
         log.info("Просмотр события с id={} от пользователя с id={} на  ", eventId, userId);
@@ -92,7 +93,7 @@ public class PrivateEventService {
     public List<RequestDto> getEventRequestsPrivate(Long userId, Long eventId) {
         userRepository.findUserById(userId);
         Event event = eventRepository.findEventById(eventId);
-        if (event.getInitiator().getId() != userId) {
+        if (!Objects.equals(event.getInitiator().getId(), userId)) {
             throw new NotFoundException("Вы не являетесь инициатором этого события.");
         }
         log.info("Просмотр запросов на событие с id={} от пользователя с id={}", eventId, userId);
