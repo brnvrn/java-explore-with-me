@@ -30,7 +30,8 @@ public class StatClient {
         makeAndSendRequest(HttpMethod.POST, "/hit", null, endpointHitsDto);
     }
 
-    public ResponseEntity<Object> getStats(LocalDateTime start, LocalDateTime end, @Nullable String[] uris, @Nullable Boolean unique) {
+    public ResponseEntity<Object> getStats(LocalDateTime start, LocalDateTime end, @Nullable List<String> uris,
+                                           @Nullable Boolean unique) {
         if (uris == null) {
             throw new IllegalArgumentException("Параметр uris не может быть null");
         }
