@@ -13,7 +13,6 @@ import ru.practicum.exploreWithMe.compilation.repository.CompilationRepository;
 import ru.practicum.exploreWithMe.event.model.Event;
 import ru.practicum.exploreWithMe.event.repository.EventRepository;
 
-import java.util.ArrayList;
 import java.util.List;
 
 @Slf4j
@@ -27,13 +26,12 @@ public class AdminCompilationService {
 
     @Transactional
     public CompilationDto addNewCompilationByAdmin(NewCompilationDto newCompilationDto) {
-        List<Event> events = new ArrayList<>();
-        if (newCompilationDto.getEvents() != null && !newCompilationDto.getEvents().isEmpty()) {
-            events = eventRepository.findAllById(newCompilationDto.getEvents());
+        Compilation compilation = compilationMapper.toCompilation(newCompilationDto);
+        if (newCompilationDto.getEvents() != null) {
+            List<Event> events = eventRepository.findAllById(newCompilationDto.getEvents());
+            compilation.setEvents(events);
         }
-        Compilation compilation = compilationRepository.save(compilationMapper.toCompilation(newCompilationDto, events));
-        log.info("Добавление новой подборки: {}", newCompilationDto);
-
+        compilationRepository.save(compilation);
         return compilationMapper.toCompilationDto(compilation);
     }
 

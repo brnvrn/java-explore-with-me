@@ -1,5 +1,6 @@
 package ru.practicum.exploreWithMe.event.dto;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.PositiveOrZero;
@@ -25,6 +26,7 @@ public class EventDto {
     @NotBlank
     @Size(max = 7000, message = "Описание не должно превышать 7000 символов")
     private String description;
+    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
     private String eventDate;
     private UserShortDto initiator;
     @NotNull
@@ -34,7 +36,7 @@ public class EventDto {
     private Long participantLimit;
     private String publishedOn;
     private boolean requestModeration;
-    private EventState eventState;
+    private EventState state;
     @NotBlank
     @Size(max = 120, message = "Заголовок не должен превышать 120 символов")
     private String title;

@@ -19,7 +19,7 @@ public class CategoryService {
     private final CategoryRepository categoryRepository;
     private final CategoryMapper categoryMapper;
 
-    public List<CategoryDto> getCategories(int from, int size) {
+    public List<CategoryDto> getCategories(Integer from, Integer size) {
         log.info("Получение категорий с параметрами: from={}, size={}", from, size);
         return categoryMapper.toCategoryDtoList(categoryRepository.findAll(PageRequest.of(from, size)).toList());
     }

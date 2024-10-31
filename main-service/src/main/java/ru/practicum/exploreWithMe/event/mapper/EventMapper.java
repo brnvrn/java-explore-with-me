@@ -15,14 +15,17 @@ import java.util.List;
 public interface EventMapper {
 
     @Mapping(target = "id", ignore = true)
-    @Mapping(target = "category", ignore = true)
-    Event toEvent(NewEventDto eventDto, Category category, User user);
+    @Mapping(target = "category", source = "category")
+    @Mapping(target = "initiator", source = "initiator")
+    Event toEvent(NewEventDto eventDto, Category category, User initiator);
 
+    @Mapping(target = "views", ignore = true)
+    @Mapping(target = "location", ignore = true)
+    @Mapping(target = "state", ignore = true)
     EventDto toEventDto(Event event);
 
+    @Mapping(target = "views", ignore = true)
     EventShortDto toEventShortDto(Event event);
 
     List<EventShortDto> toEventShortDtoList(List<Event> events);
-
-    List<EventDto> toEventDtoList(List<Event> events);
 }

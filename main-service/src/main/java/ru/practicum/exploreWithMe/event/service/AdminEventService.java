@@ -15,10 +15,11 @@ import ru.practicum.exploreWithMe.event.model.AdminStateAction;
 import ru.practicum.exploreWithMe.event.model.Event;
 import ru.practicum.exploreWithMe.event.model.EventState;
 import ru.practicum.exploreWithMe.event.repository.EventRepository;
-import ru.practicum.exploreWithMe.exception.EventException;
+import ru.practicum.exploreWithMe.exception.ConflictException;
 
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
 import java.util.List;
 
 @Slf4j
@@ -46,24 +47,86 @@ public class AdminEventService {
         categories = (categories != null && !categories.isEmpty()) ? categories : null;
 
         Page<Event> eventsPage = eventRepository.searchEvents(users, states, categories, startTime, endTime,
-                PageRequest.of(from, size));
+                PageRequest.of(from / size, size));
         log.info("Просмотр событий администратора с параметрами: users={}, states={}, " +
                         "categories={}, rangeStart={}, rangeEnd={}, from={}, size={}", users, states, categories,
                 rangeStart, rangeEnd, from, size);
-        return eventMapper.toEventDtoList(eventsPage.getContent());
+        List<EventDto> eventDtos = new ArrayList<>();
+        for (Event event : eventsPage.getContent()) {
+            eventDtos.add(eventMapper.toEventDto(event));
+        }
+
+        return eventDtos;
     }
 
     @Transactional
     public EventDto updateEventByAdmin(Long eventId, UpdateEventAdminRequest updateEventAdminRequest) {
         Event event = eventRepository.findEventById(eventId);
 
-        updateEventFields(event, updateEventAdminRequest);
-        handleAdminStateAction(event, updateEventAdminRequest);
+        if (updateEventAdminRequest.getAnnotation() != null) {
+            event.setAnnotation(updateEventAdminRequest.getAnnotation());
+        }
+        if (updateEventAdminRequest.getCategory() != null) {
+            Category category = categoryRepository.findCategoryById(updateEventAdminRequest.getCategory());
+            event.setCategory(category);
+        }
+        if (updateEventAdminRequest.getDescription() != null) {
+            event.setDescription(updateEventAdminRequest.getDescription());
+        }
+        if (updateEventAdminRequest.getEventDate() != null) {
+            event.setEventDate(updateEventAdminRequest.getEventDate());
+        }
+        if (updateEventAdminRequest.getLocation() != null) {
+            event.setLat(updateEventAdminRequest.getLocation().getLat());
+            event.setLon(updateEventAdminRequest.getLocation().getLon());
+        }
+        if (updateEventAdminRequest.getPaid() != null) {
+            event.setPaid(updateEventAdminRequest.getPaid());
+        }
+        if (updateEventAdminRequest.getParticipantLimit() != null) {
+            event.setParticipantLimit(updateEventAdminRequest.getParticipantLimit());
+        }
+        if (updateEventAdminRequest.getRequestModeration() != null) {
+            event.setRequestModeration(updateEventAdminRequest.getRequestModeration());
+        }
+        if (updateEventAdminRequest.getTitle() != null) {
+            event.setTitle(updateEventAdminRequest.getTitle());
+        }
+
+        if (updateEventAdminRequest.getStateAction() != null) {
+            if (event.getState().equals(EventState.PENDING)) {
+                if (updateEventAdminRequest.getStateAction().equals(AdminStateAction.PUBLISH_EVENT)) {
+                    event.setState(EventState.PUBLISHED);
+                    event.setPublishedOn(LocalDateTime.now());
+                } else if (updateEventAdminRequest.getStateAction().equals(AdminStateAction.REJECT_EVENT)) {
+                    event.setState(EventState.CANCELED);
+                }
+            } else if (event.getState().equals(EventState.PUBLISHED)) {
+                if (updateEventAdminRequest.getStateAction().equals(AdminStateAction.PUBLISH_EVENT)) {
+                    throw new ConflictException("Событие уже опубликовано и не может быть опубликовано повторно.");
+                } else {
+                    throw new ConflictException("Событие уже опубликовано и не может быть отменено.");
+                }
+            } else {
+                if (updateEventAdminRequest.getStateAction().equals(AdminStateAction.PUBLISH_EVENT)) {
+                    throw new ConflictException("Событие отменено и не может быть опубликовано.");
+                } else {
+                    throw new ConflictException("Событие уже отменено и не может быть отменено повторно.");
+                }
+            }
+        }
+
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+
+        String formattedDate = event.getEventDate().format(formatter);
 
         Event updatedEvent = eventRepository.save(event);
-        log.info("Изменение собятия с id={} и входными парамертами :{} администратором",
-                eventId, updateEventAdminRequest);
-        return eventMapper.toEventDto(updatedEvent);
+
+        EventDto eventDto = eventMapper.toEventDto(updatedEvent);
+
+        eventDto.setEventDate(formattedDate);
+
+        return eventDto;
     }
 
     private LocalDateTime parseDate(String dateStr, LocalDateTime defaultValue) {
@@ -71,80 +134,5 @@ public class AdminEventService {
             return defaultValue;
         }
         return LocalDateTime.parse(dateStr, DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
-    }
-
-    private void updateEventFields(Event event, UpdateEventAdminRequest request) {
-        if (request.getAnnotation() != null) {
-            event.setAnnotation(request.getAnnotation());
-        }
-        if (request.getCategory() != null) {
-            Category category = categoryRepository.findCategoryById(request.getCategory());
-            event.setCategory(category);
-        }
-        if (request.getDescription() != null) {
-            event.setDescription(request.getDescription());
-        }
-        if (request.getEventDate() != null) {
-            event.setEventDate(request.getEventDate());
-        }
-        if (request.getLocation() != null) {
-            event.setLat(request.getLocation().getLat());
-            event.setLon(request.getLocation().getLon());
-        }
-        if (request.getPaid() != null) {
-            event.setPaid(request.getPaid());
-        }
-        if (request.getParticipantLimit() != null) {
-            event.setParticipantLimit(request.getParticipantLimit());
-        }
-        if (request.getRequestModeration() != null) {
-            event.setRequestModeration(request.getRequestModeration());
-        }
-        if (request.getTitle() != null) {
-            event.setTitle(request.getTitle());
-        }
-    }
-
-    private void handleAdminStateAction(Event event, UpdateEventAdminRequest request) {
-        if (request.getAdminStateAction() == null) return;
-
-        switch (event.getState()) {
-            case PENDING:
-                handlePendingState(event, request);
-                break;
-            case PUBLISHED:
-                handlePublishedState(event, request);
-                break;
-            case CANCELED:
-                handleCanceledState(event, request);
-                break;
-            default:
-                throw new EventException("Неизвестное состояние события");
-        }
-    }
-
-    private void handlePendingState(Event event, UpdateEventAdminRequest request) {
-        if (request.getAdminStateAction().equals(AdminStateAction.PUBLISH_EVENT)) {
-            event.setState(EventState.PUBLISHED);
-            event.setPublishedOn(LocalDateTime.now());
-        } else if (request.getAdminStateAction().equals(AdminStateAction.REJECT_EVENT)) {
-            event.setState(EventState.CANCELED);
-        }
-    }
-
-    private void handlePublishedState(Event event, UpdateEventAdminRequest request) {
-        if (request.getAdminStateAction().equals(AdminStateAction.PUBLISH_EVENT)) {
-            throw new EventException("Событие уже опубликовано");
-        } else {
-            throw new EventException("Нельзя отменить опубликованное событие");
-        }
-    }
-
-    private void handleCanceledState(Event event, UpdateEventAdminRequest request) {
-        if (request.getAdminStateAction().equals(AdminStateAction.PUBLISH_EVENT)) {
-            throw new EventException("Событие отменено");
-        } else {
-            throw new EventException("Событие уже отменено");
-        }
     }
 }

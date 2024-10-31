@@ -14,10 +14,7 @@ import ru.practicum.exploreWithMe.event.model.Event;
 import ru.practicum.exploreWithMe.event.model.EventRequestStatus;
 import ru.practicum.exploreWithMe.event.model.EventState;
 import ru.practicum.exploreWithMe.event.repository.EventRepository;
-import ru.practicum.exploreWithMe.exception.EventException;
-import ru.practicum.exploreWithMe.exception.NotFoundException;
-import ru.practicum.exploreWithMe.exception.NotInitiatorException;
-import ru.practicum.exploreWithMe.exception.NotModerationException;
+import ru.practicum.exploreWithMe.exception.*;
 import ru.practicum.exploreWithMe.request.dto.RequestDto;
 import ru.practicum.exploreWithMe.request.mapper.RequestMapper;
 import ru.practicum.exploreWithMe.request.model.Request;
@@ -27,6 +24,7 @@ import ru.practicum.exploreWithMe.user.model.User;
 import ru.practicum.exploreWithMe.user.repository.UserRepository;
 
 import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
@@ -49,10 +47,20 @@ public class PrivateEventService {
         Category category = categoryRepository.findCategoryById(newEventDto.getCategory());
         Event event = eventMapper.toEvent(newEventDto, category, user);
         event.setCreatedOn(LocalDateTime.now());
-        event.setState((EventState.PENDING));
-        EventDto eventDto = eventMapper.toEventDto(eventRepository.save(event));
-        eventDto.setViews(0L);
+        event.setState(EventState.PENDING);
+        event.setLat(newEventDto.getLocation().getLat());
+        event.setLon(newEventDto.getLocation().getLon());
 
+        Event savedEvent = eventRepository.save(event);
+
+        EventDto eventDto = eventMapper.toEventDto(savedEvent);
+
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+        String formattedDate = savedEvent.getEventDate().format(formatter);
+        eventDto.setViews(0L);
+        eventDto.setLocation(new LocationDto(event.getLat(), event.getLon()));
+        eventDto.setState(EventState.PENDING);
+        eventDto.setEventDate(formattedDate);
         log.info("Добавление события пользователя с id={} и параметрами: {}", userId, newEventDto);
         return eventDto;
     }
@@ -67,18 +75,57 @@ public class PrivateEventService {
         return eventMapper.toEventDto(event);
     }
 
-    @Transactional
     public EventDto updateEventPrivate(Long userId, Long eventId, UpdateEventUserRequest updateEventUserRequest) {
-        validateUserAndEvent(userId, eventId);
+        userRepository.findUserById(userId);
         Event event = eventRepository.findEventById(eventId);
+        if (event.getState().equals(EventState.PUBLISHED)) {
+            throw new ConflictException("Нельзя обновить опубликованное событие");
+        }
+        if (event.getInitiator().getId() != userId) {
+            throw new NotFoundException("Вы не являетесь инициатором данного события");
+        }
 
-        checkEventState(event);
-        updateEventFields(event, updateEventUserRequest);
-        handlePrivateStateAction(event, updateEventUserRequest);
+        if (updateEventUserRequest.getAnnotation() != null) {
+            event.setAnnotation(updateEventUserRequest.getAnnotation());
+        }
+        if (updateEventUserRequest.getCategory() != null) {
+            Category category = categoryRepository.findCategoryById(updateEventUserRequest.getCategory());
+            event.setCategory(category);
+        }
+        if (updateEventUserRequest.getDescription() != null) {
+            event.setDescription(updateEventUserRequest.getDescription());
+        }
+        if (updateEventUserRequest.getEventDate() != null) {
+            event.setEventDate(updateEventUserRequest.getEventDate());
+        }
+        if (updateEventUserRequest.getLocation() != null) {
+            event.setLat(updateEventUserRequest.getLocation().getLat());
+            event.setLon(updateEventUserRequest.getLocation().getLon());
+        }
+        if (updateEventUserRequest.getPaid() != null) {
+            event.setPaid(updateEventUserRequest.getPaid());
+        }
+        if (updateEventUserRequest.getParticipantLimit() != null) {
+            event.setParticipantLimit(updateEventUserRequest.getParticipantLimit());
+        }
+        if (updateEventUserRequest.getRequestModeration() != null) {
+            event.setRequestModeration(updateEventUserRequest.getRequestModeration());
+        }
 
+        if (updateEventUserRequest.getStateAction() != null) {
+            switch (updateEventUserRequest.getStateAction()) {
+                case SEND_TO_REVIEW:
+                    event.setState(EventState.PENDING);
+                    break;
+                case CANCEL_REVIEW:
+                    event.setState(EventState.CANCELED);
+                    break;
+                default:
+                    throw new NotModerationException("Некорректное значение.");
+            }
+        }
         EventDto eventDto = eventMapper.toEventDto(eventRepository.save(event));
         eventDto.setViews(0L);
-        log.info("Изменение события с id={} от пользователя с id={}  ", eventId, userId);
         return eventDto;
     }
 
@@ -116,56 +163,6 @@ public class PrivateEventService {
         return processRequests(event, requests, statusUpdateRequest);
     }
 
-    private void checkEventState(Event event) {
-        if (event.getState().equals(EventState.PUBLISHED)) {
-            throw new EventException("Опубликованное событие нельзя обновить");
-        }
-    }
-
-    private void updateEventFields(Event event, UpdateEventUserRequest request) {
-        if (request.getAnnotation() != null) {
-            event.setAnnotation(request.getAnnotation());
-        }
-        if (request.getCategory() != null) {
-            Category category = categoryRepository.findCategoryById(request.getCategory());
-            event.setCategory(category);
-        }
-        if (request.getDescription() != null) {
-            event.setDescription(request.getDescription());
-        }
-        if (request.getEventDate() != null) {
-            event.setEventDate(request.getEventDate());
-        }
-        if (request.getLocation() != null) {
-            event.setLat(request.getLocation().getLat());
-            event.setLon(request.getLocation().getLon());
-        }
-        if (request.getPaid() != null) {
-            event.setPaid(request.getPaid());
-        }
-        if (request.getParticipantLimit() != null) {
-            event.setParticipantLimit(request.getParticipantLimit());
-        }
-        if (request.getRequestModeration() != null) {
-            event.setRequestModeration(request.getRequestModeration());
-        }
-    }
-
-    private void handlePrivateStateAction(Event event, UpdateEventUserRequest request) {
-        if (request.getPrivateStateAction() == null) return;
-
-        switch (request.getPrivateStateAction()) {
-            case SEND_TO_REVIEW:
-                event.setState(EventState.PENDING);
-                break;
-            case CANCEL_REVIEW:
-                event.setState(EventState.CANCELED);
-                break;
-            default:
-                throw new NotModerationException("Неправильное состояние");
-        }
-    }
-
     private void validateUserAndEvent(Long userId, Long eventId) {
         userRepository.findUserById(userId);
         Event event = eventRepository.findEventById(eventId);
@@ -182,7 +179,7 @@ public class PrivateEventService {
     }
 
     private void checkParticipantLimit(Event event) {
-        if (event.getParticipantLimit() > 0 && event.getConfirmedRequests() >= event.getParticipantLimit()) {
+        if (event.getParticipantLimit() != null && event.getConfirmedRequests() >= event.getParticipantLimit()) {
             throw new EventException("Лимит участников события превышен");
         }
     }

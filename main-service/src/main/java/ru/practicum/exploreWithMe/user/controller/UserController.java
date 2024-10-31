@@ -1,8 +1,10 @@
 package ru.practicum.exploreWithMe.user.controller;
 
+import jakarta.validation.Valid;
 import jakarta.validation.constraints.Positive;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import ru.practicum.exploreWithMe.user.dto.NewUserRequest;
 import ru.practicum.exploreWithMe.user.dto.UserDto;
@@ -18,15 +20,16 @@ public class UserController {
     private final UserService userService;
 
     @PostMapping
-    public UserDto addNewUser(@RequestBody NewUserRequest newUserRequest) {
+    public ResponseEntity<Object> addNewUser(@RequestBody @Valid NewUserRequest newUserRequest) {
         log.info("Получен POST-запрос на добавление нового пользователя: {}", newUserRequest);
-        return userService.addNewUser(newUserRequest);
+        return ResponseEntity.status(201).body(userService.addNewUser(newUserRequest));
     }
 
     @DeleteMapping("/{userId}")
-    public void deleteUserById(@PathVariable @Positive Long userId) {
+    public ResponseEntity<Object> deleteUserById(@PathVariable @Positive Long userId) {
         log.info("Получен DELETE-запрос на удаление пользователя с id={}", userId);
         userService.deleteUserById(userId);
+        return ResponseEntity.status(204).build();
     }
 
     @GetMapping

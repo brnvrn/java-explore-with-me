@@ -42,11 +42,11 @@ public class AdminCategoryService {
 
     @Transactional
     public CategoryDto updateCategoryByAdmin(Long catId, NewCategoryDto newCategoryDto) {
-        if (!uniqueCategories.contains(newCategoryDto.getName())) {
+        if (categoryRepository.existsByNameAndNotId(newCategoryDto.getName(), catId)) {
             throw new CategoryDuplicateException("Категория с таким названием не существует");
         }
         Category category = categoryRepository.findCategoryById(catId);
-        uniqueCategories.remove(category.getName());
+
 
         category.setName(newCategoryDto.getName());
         uniqueCategories.add(newCategoryDto.getName());

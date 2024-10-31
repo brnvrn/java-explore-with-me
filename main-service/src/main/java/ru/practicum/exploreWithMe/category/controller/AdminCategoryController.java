@@ -4,8 +4,8 @@ import jakarta.validation.Valid;
 import jakarta.validation.constraints.Positive;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import ru.practicum.exploreWithMe.category.dto.CategoryDto;
 import ru.practicum.exploreWithMe.category.dto.NewCategoryDto;
 import ru.practicum.exploreWithMe.category.service.AdminCategoryService;
 
@@ -17,21 +17,22 @@ public class AdminCategoryController {
     private final AdminCategoryService adminCategoryService;
 
     @PostMapping
-    public CategoryDto addNewCategoryByAdmin(@Valid @RequestBody NewCategoryDto newCategoryDto) {
+    public ResponseEntity<Object> addNewCategoryByAdmin(@Valid @RequestBody NewCategoryDto newCategoryDto) {
         log.info("Получен POST-запрос на добавление новой категории: {}", newCategoryDto);
-        return adminCategoryService.addNewCategoryByAdmin(newCategoryDto);
+        return ResponseEntity.status(201).body(adminCategoryService.addNewCategoryByAdmin(newCategoryDto));
     }
 
     @PatchMapping("/{catId}")
-    public CategoryDto updateCategoryByAdmin(@PathVariable @Positive Long catId, @Valid @RequestBody NewCategoryDto
-            newCategoryDto) {
+    public ResponseEntity<Object> updateCategoryByAdmin(@PathVariable @Positive Long catId,
+                                                        @Valid @RequestBody NewCategoryDto newCategoryDto) {
         log.info("Получен PATCH-запрос на изменение категории с id ={}", catId);
-        return adminCategoryService.updateCategoryByAdmin(catId, newCategoryDto);
+        return ResponseEntity.status(200).body(adminCategoryService.updateCategoryByAdmin(catId, newCategoryDto));
     }
 
     @DeleteMapping("/{catId}")
-    public void deleteCategoryByAdmin(@PathVariable @Positive Long catId) {
+    public ResponseEntity<Object> deleteCategoryByAdmin(@PathVariable @Positive Long catId) {
         log.info("Получен DELETE-запрос на удаление подборки с id ={}", catId);
         adminCategoryService.deleteCategoryByAdmin(catId);
+        return ResponseEntity.status(204).build();
     }
 }

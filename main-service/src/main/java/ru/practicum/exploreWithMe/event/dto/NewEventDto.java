@@ -13,12 +13,12 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 public class NewEventDto {
     @NotBlank
-    @Size(max = 2000, message = "Аннотация не должна превышать 2000 символов")
+    @Size(min = 20, max = 2000, message = "Аннотация не должна превышать 2000 символов")
     private String annotation;
     @NotNull
     private Long category;
     @NotBlank
-    @Size(max = 7000, message = "Описание не должно превышать 7000 символов")
+    @Size(min = 20, max = 7000, message = "Описание не должно превышать 7000 символов")
     private String description;
     @NotNull
     @Future
@@ -26,11 +26,11 @@ public class NewEventDto {
     private LocalDateTime eventDate;
     @NotNull
     private LocationDto location;
-    private Boolean paid;
+    private Boolean paid = false;
     @PositiveOrZero
-    private Integer participantLimit;
-    private Boolean requestModeration;
+    private Integer participantLimit = 0;
+    private Boolean requestModeration = true;
     @NotBlank
-    @Size(max = 120, message = "Заголовок не должен превышать 120 символов")
+    @Size(min = 3, max = 120, message = "Заголовок не должен превышать 120 символов")
     private String title;
 }

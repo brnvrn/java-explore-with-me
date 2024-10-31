@@ -5,6 +5,8 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.constraints.Positive;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.HttpStatus;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 import ru.practicum.exploreWithMe.event.dto.EventDto;
 import ru.practicum.exploreWithMe.event.dto.EventShortDto;
@@ -14,12 +16,14 @@ import java.util.List;
 
 @Slf4j
 @RestController
+@Validated
 @RequestMapping(path = "/events")
 @RequiredArgsConstructor
 public class EventController {
     private final EventService eventService;
 
     @GetMapping
+    @ResponseStatus(HttpStatus.OK)
     public List<EventShortDto> searchEventsPublic(@RequestParam(required = false) String text,
                                                   @RequestParam(required = false) List<Long> categories,
                                                   @RequestParam(required = false) Boolean paid,

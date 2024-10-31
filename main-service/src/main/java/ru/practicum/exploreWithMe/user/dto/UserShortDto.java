@@ -12,6 +12,6 @@ import lombok.NoArgsConstructor;
 public class UserShortDto {
     Long id;
     @NotBlank
-    @Size(max = 255, message = "Имя не должно быть больше 255 символов")
+    @Size(max = 250, message = "Имя не должно быть больше 250 символов")
     String name;
 }

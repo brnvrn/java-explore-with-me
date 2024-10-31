@@ -13,7 +13,7 @@ import java.util.List;
 
 @Slf4j
 @RestController
-@RequestMapping(path = "/admin/events")
+@RequestMapping("/admin/events")
 @RequiredArgsConstructor
 public class AdminEventController {
     private final AdminEventService adminEventService;

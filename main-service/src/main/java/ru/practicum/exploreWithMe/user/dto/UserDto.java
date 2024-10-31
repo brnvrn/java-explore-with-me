@@ -14,9 +14,9 @@ public class UserDto {
     private Long id;
     @NotBlank
     @Email
-    @Size(max = 50, message = "Эмейл не должен быть больше 50 символов")
+    @Size(min = 6, max = 254, message = "Эмейл не должен быть больше 254 символов")
     private String email;
     @NotBlank
-    @Size(max = 255, message = "Имя не должно быть больше 255 символов")
+    @Size(min = 2, max = 250, message = "Имя не должно быть больше 255 символов")
     private String name;
 }

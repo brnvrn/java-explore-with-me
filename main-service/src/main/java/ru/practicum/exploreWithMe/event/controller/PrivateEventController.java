@@ -1,9 +1,11 @@
 package ru.practicum.exploreWithMe.event.controller;
 
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Positive;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import ru.practicum.exploreWithMe.event.dto.*;
 import ru.practicum.exploreWithMe.event.service.PrivateEventService;
@@ -13,7 +15,7 @@ import java.util.List;
 
 @Slf4j
 @RestController
-@RequestMapping(path = "/users/{userId}/events")
+@RequestMapping("/users/{userId}/events")
 @RequiredArgsConstructor
 public class PrivateEventController {
     private final PrivateEventService privateEventService;
@@ -28,12 +30,12 @@ public class PrivateEventController {
     }
 
     @PostMapping
-    public EventDto addNewEventPrivate(@PathVariable Long userId,
-                                       @Valid @RequestBody NewEventDto newEventDto) {
+    public ResponseEntity<Object> addNewEventPrivate(@PathVariable Long userId,
+                                                     @Valid @RequestBody NewEventDto newEventDto) {
         log.info("Получен POST-запрос на добавление события пользователя с id={} и параметрами: {}", userId,
                 newEventDto);
 
-        return privateEventService.addNewEventPrivate(userId, newEventDto);
+        return ResponseEntity.status(201).body(privateEventService.addNewEventPrivate(userId, newEventDto));
     }
 
     @GetMapping("/{eventId}")
@@ -44,12 +46,12 @@ public class PrivateEventController {
     }
 
     @PatchMapping("/{eventId}")
-    public EventDto updateEventPrivate(@PathVariable @Positive Long userId,
-                                       @PathVariable @Positive Long eventId,
-                                       @Valid @RequestBody UpdateEventUserRequest updateEventUserRequest) {
-        log.info("Получен PATCH-запрос от пользователя с id={} на изменение события с id={} ", userId, eventId);
-        return privateEventService.updateEventPrivate(userId, eventId, updateEventUserRequest);
+    public ResponseEntity<Object> updateEventByUser(@PathVariable @NotNull Long userId,
+                                                    @PathVariable @NotNull Long eventId,
+                                                    @RequestBody @Valid UpdateEventUserRequest updateEventUserRequest) {
+        return ResponseEntity.status(200).body(privateEventService.updateEventPrivate(userId, eventId, updateEventUserRequest));
     }
+
 
     @GetMapping("/{eventId}/requests")
     public List<RequestDto> getEventRequestsPrivate(@PathVariable @Positive Long userId,
@@ -59,13 +61,10 @@ public class PrivateEventController {
         return privateEventService.getEventRequestsPrivate(userId, eventId);
     }
 
-    @PatchMapping("/{eventId}/requests")
-    public EventRequestStatusUpdateResult updateRequestsStatusPrivate(@PathVariable @Positive Long userId,
-                                                                      @PathVariable @Positive Long eventId,
-                                                                      @Valid @RequestBody
-                                                                      EventRequestStatusUpdateRequest request) {
-        log.info("Получен PATCH-запрос от пользователя с id={} на изменение статуса запроса события с id={} ", userId,
-                eventId);
+    @PatchMapping("{eventId}/requests")
+    public EventRequestStatusUpdateResult updateEventRequestStatus(@PathVariable @NotNull Long userId,
+                                                                   @PathVariable @NotNull Long eventId,
+                                                                   @RequestBody @Valid EventRequestStatusUpdateRequest request) {
         return privateEventService.updateRequestsStatusPrivate(userId, eventId, request);
     }
 }

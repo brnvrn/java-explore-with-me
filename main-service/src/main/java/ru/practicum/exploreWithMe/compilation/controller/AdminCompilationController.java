@@ -4,6 +4,7 @@ import jakarta.validation.Valid;
 import jakarta.validation.constraints.Positive;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import ru.practicum.exploreWithMe.compilation.dto.CompilationDto;
 import ru.practicum.exploreWithMe.compilation.dto.NewCompilationDto;
@@ -18,9 +19,9 @@ public class AdminCompilationController {
     private final AdminCompilationService adminCompilationService;
 
     @PostMapping
-    public CompilationDto addNewCompilation(@Valid @RequestBody NewCompilationDto newCompilationDto) {
+    public ResponseEntity<Object> addNewCompilation(@Valid @RequestBody NewCompilationDto newCompilationDto) {
         log.info("Получен POST-запрос на добавление новой подборки: {}", newCompilationDto);
-        return adminCompilationService.addNewCompilationByAdmin(newCompilationDto);
+        return ResponseEntity.status(201).body(adminCompilationService.addNewCompilationByAdmin(newCompilationDto));
     }
 
     @PatchMapping("/{compId}")

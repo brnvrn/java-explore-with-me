@@ -21,9 +21,9 @@ import ru.practicum.exploreWithMe.event.model.Event;
 import ru.practicum.exploreWithMe.event.model.EventState;
 import ru.practicum.exploreWithMe.event.model.Sort;
 import ru.practicum.exploreWithMe.event.repository.EventRepository;
-import ru.practicum.exploreWithMe.exception.EventException;
 import ru.practicum.exploreWithMe.exception.JsonException;
 import ru.practicum.exploreWithMe.exception.NotFoundException;
+import ru.practicum.exploreWithMe.exception.NotModerationException;
 
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
@@ -58,7 +58,7 @@ public class EventService {
             endTime = LocalDateTime.parse(rangeEnd, DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
         }
         if (endTime.isBefore(startTime)) {
-            throw new EventException("Дата окончания поиска не может быть раньше даты начала");
+            throw new NotModerationException("Дата окончания поиска не может быть раньше даты начала");
         }
         Sort sortValue;
         if (sort != null) {
@@ -67,7 +67,7 @@ public class EventService {
             } else if ("VIEWS".equalsIgnoreCase(sort)) {
                 sortValue = Sort.VIEWS;
             } else {
-                throw new EventException("Неправильное значение сортировки");
+                throw new NotModerationException("Неправильное значение сортировки");
             }
         } else {
             sortValue = Sort.VIEWS;

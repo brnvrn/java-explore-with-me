@@ -42,7 +42,7 @@ public class Event {
     @Column(name = "event_date", nullable = false)
     @NotNull
     @Future
-    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
+    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd HH:mm:ss")
     private LocalDateTime eventDate;
     @ManyToOne
     @JoinColumn(name = "initiator", nullable = false)
