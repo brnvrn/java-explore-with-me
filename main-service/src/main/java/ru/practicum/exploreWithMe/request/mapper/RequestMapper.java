@@ -1,18 +1,28 @@
 package ru.practicum.exploreWithMe.request.mapper;
 
-import org.mapstruct.Mapper;
-import org.mapstruct.Mapping;
+import org.springframework.stereotype.Component;
 import ru.practicum.exploreWithMe.request.dto.RequestDto;
 import ru.practicum.exploreWithMe.request.model.Request;
 
+import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
 import java.util.List;
 
-@Mapper(componentModel = "spring")
-public interface RequestMapper {
-    @Mapping(target = "event", ignore = true)
-    @Mapping(target = "requester", ignore = true)
-    RequestDto toRequestDto(Request request);
+@Component
+public class RequestMapper {
+    public static RequestDto toRequestDto(Request request) {
+        return new RequestDto(request.getId(),
+                request.getCreated().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")),
+                request.getEvent().getId(),
+                request.getRequester().getId(),
+                request.getStatus());
+    }
 
-    @Mapping(target = "request", ignore = true)
-    List<RequestDto> toRequestDtoList(List<Request> requestsList);
+    public static List<RequestDto> toRequestDtoList(List<Request> requests) {
+        List<RequestDto> requestDtoList = new ArrayList<>();
+        for (Request request : requests) {
+            requestDtoList.add(toRequestDto(request));
+        }
+        return requestDtoList;
+    }
 }

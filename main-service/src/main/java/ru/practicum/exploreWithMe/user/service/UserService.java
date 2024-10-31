@@ -24,7 +24,6 @@ import java.util.Set;
 @Transactional(readOnly = true)
 public class UserService {
     private final UserRepository userRepository;
-    private final UserMapper userMapper;
     private final Set<String> uniqueEmails = new HashSet<>();
 
     @Transactional
@@ -33,12 +32,12 @@ public class UserService {
             throw new NotUniqueEmailException("Пользователь с таким email уже существует.");
         }
 
-        User user = userMapper.toUser(newUserRequest);
+        User user = UserMapper.toUser(newUserRequest);
         User savedUser = userRepository.save(user);
 
         uniqueEmails.add(savedUser.getEmail());
 
-        return userMapper.toUserDto(savedUser);
+        return UserMapper.toUserDto(savedUser);
     }
 
     @Transactional
@@ -51,6 +50,6 @@ public class UserService {
 
     public List<UserDto> getUsers(List<Long> ids, int from, int size) {
         Page<User> page = userRepository.findByIdInOrderById(ids, PageRequest.of(from, size));
-        return userMapper.toUserDtoList(page.getContent());
+        return UserMapper.toUserDtoList(page.getContent());
     }
 }

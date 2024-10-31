@@ -54,7 +54,7 @@ public class Event {
     @Column(nullable = false)
     private boolean paid;
     @Column(name = "participant_limit")
-    private Long participantLimit;
+    private long participantLimit;
     @Column(name = "published_on", nullable = false)
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
     private LocalDateTime publishedOn;

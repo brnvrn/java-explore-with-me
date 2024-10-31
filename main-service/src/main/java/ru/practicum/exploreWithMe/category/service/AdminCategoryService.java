@@ -24,7 +24,7 @@ import java.util.Set;
 public class AdminCategoryService {
     private final CategoryRepository categoryRepository;
     private final EventRepository eventRepository;
-    private final CategoryMapper categoryMapper;
+
     private final Set<String> uniqueCategories = new HashSet<>();
 
     @Transactional
@@ -33,11 +33,11 @@ public class AdminCategoryService {
             throw new CategoryDuplicateException("Категория с таким названием уже существует");
         }
 
-        Category savedCategory = categoryRepository.save(categoryMapper.toCategory(newCategoryDto));
+        Category savedCategory = categoryRepository.save(CategoryMapper.toCategory(newCategoryDto));
         uniqueCategories.add(newCategoryDto.getName());
         log.info("Добавление новой категории: {}", newCategoryDto);
 
-        return categoryMapper.toCategoryDto(savedCategory);
+        return CategoryMapper.toCategoryDto(savedCategory);
     }
 
     @Transactional
@@ -52,7 +52,7 @@ public class AdminCategoryService {
         uniqueCategories.add(newCategoryDto.getName());
 
         log.info("Обновление категории с id ={}", catId);
-        return categoryMapper.toCategoryDto(categoryRepository.save(category));
+        return CategoryMapper.toCategoryDto(categoryRepository.save(category));
     }
 
     @Transactional

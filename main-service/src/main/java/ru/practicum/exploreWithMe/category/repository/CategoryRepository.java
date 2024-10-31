@@ -11,8 +11,7 @@ public interface CategoryRepository extends JpaRepository<Category, Long> {
     default Category findCategoryById(Long catId) {
         return findById(catId).orElseThrow(() -> new NotFoundException("Такой категории не существует"));
     }
-
     @Query("SELECT CASE WHEN COUNT(c) > 0 THEN true ELSE false END " +
             "FROM Category c WHERE c.name = :name AND c.id <> :id")
-    boolean existsByNameAndNotId(@Param("name") String name, @Param("id") long id);
+    boolean existsByNameAndNotId(@Param("name") String name, @Param("id") Long id);
 }

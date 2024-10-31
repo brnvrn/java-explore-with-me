@@ -28,7 +28,6 @@ import java.util.List;
 @RequiredArgsConstructor
 public class AdminEventService {
     private final EventRepository eventRepository;
-    private final EventMapper eventMapper;
     private final CategoryRepository categoryRepository;
 
     public List<EventDto> searchEventByAdmin(List<Long> users,
@@ -53,7 +52,7 @@ public class AdminEventService {
                 rangeStart, rangeEnd, from, size);
         List<EventDto> eventDtos = new ArrayList<>();
         for (Event event : eventsPage.getContent()) {
-            eventDtos.add(eventMapper.toEventDto(event));
+            eventDtos.add(EventMapper.toEventDto(event));
         }
 
         return eventDtos;
@@ -115,18 +114,8 @@ public class AdminEventService {
                 }
             }
         }
-
-        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
-
-        String formattedDate = event.getEventDate().format(formatter);
-
         Event updatedEvent = eventRepository.save(event);
-
-        EventDto eventDto = eventMapper.toEventDto(updatedEvent);
-
-        eventDto.setEventDate(formattedDate);
-
-        return eventDto;
+        return EventMapper.toEventDto(updatedEvent);
     }
 
     private LocalDateTime parseDate(String dateStr, LocalDateTime defaultValue) {

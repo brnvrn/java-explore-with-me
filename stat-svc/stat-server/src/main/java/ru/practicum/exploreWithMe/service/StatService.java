@@ -19,14 +19,13 @@ import java.util.Objects;
 @Transactional(readOnly = true)
 @RequiredArgsConstructor
 public class StatService {
-    private final EndpointHitMapper endpointHitMapper;
     private final StatRepository statRepository;
 
     @Transactional
     public EndpointHitsDto saveEndpointHit(EndpointHitsDto endpointHitsDto) {
-        EndpointHits endpointHits = statRepository.save(endpointHitMapper.toEndpointHits(endpointHitsDto));
+        EndpointHits endpointHits = statRepository.save(EndpointHitMapper.toEndpointHits(endpointHitsDto));
         log.info("Статистика успешно сохранена: {}", endpointHits);
-        return endpointHitMapper.toEndpointHitsDto(endpointHits);
+        return EndpointHitMapper.toEndpointHitsDto(endpointHits);
     }
 
     public List<StatisticsDto> getStatistics(LocalDateTime start, LocalDateTime end, List<String> uris, boolean unique) {
@@ -39,16 +38,16 @@ public class StatService {
         if (unique) {
             if (Objects.isNull(uris) || uris.isEmpty()) {
                 log.info("Получены уникальные IP статистики за период без фильтрации по URI");
-                return endpointHitMapper.toStatisticsDtoList(statRepository.getUniqueIpStatisticsForPeriod(start, end));
+                return EndpointHitMapper.toStatisticsDtoList(statRepository.getUniqueIpStatisticsForPeriod(start, end));
             }
             log.info("Получены уникальные IP статистики за период для указанных URI");
-            return endpointHitMapper.toStatisticsDtoList(statRepository.getUniqueIpStatisticsForPeriodAndUris(start, end, uris));
+            return EndpointHitMapper.toStatisticsDtoList(statRepository.getUniqueIpStatisticsForPeriodAndUris(start, end, uris));
         }
         if (Objects.isNull(uris) || uris.isEmpty()) {
             log.info("Получена общая статистика за период без фильтрации по URI");
-            return endpointHitMapper.toStatisticsDtoList(statRepository.getStatisticsForPeriod(start, end));
+            return EndpointHitMapper.toStatisticsDtoList(statRepository.getStatisticsForPeriod(start, end));
         }
         log.info("Получена общая статистика за период для указанных URI");
-        return endpointHitMapper.toStatisticsDtoList(statRepository.getStatisticsForPeriodAndUris(start, end, uris));
+        return EndpointHitMapper.toStatisticsDtoList(statRepository.getStatisticsForPeriodAndUris(start, end, uris));
     }
 }

@@ -35,7 +35,6 @@ import java.util.*;
 @RequiredArgsConstructor
 public class EventService {
     private final EventRepository eventRepository;
-    private final EventMapper eventMapper;
     private final StatClient statClient;
 
     public List<EventShortDto> searchEventsPublic(String text,
@@ -102,7 +101,7 @@ public class EventService {
 
         List<EventShortDto> eventShortDtoList = new ArrayList<>();
         for (Event event : events) {
-            EventShortDto dto = eventMapper.toEventShortDto(event);
+            EventShortDto dto = EventMapper.toEventShortDto(event);
             String eventUri = request.getRequestURI() + "/" + event.getId();
             dto.setViews(statistics.getOrDefault(eventUri, 0L));
             eventShortDtoList.add(dto);
@@ -130,7 +129,7 @@ public class EventService {
         List<StatisticsDto> statisticsDtoList = getStatistics(event.getPublishedOn().minusSeconds(1),
                 LocalDateTime.now(), List.of(request.getRequestURI()));
 
-        EventDto eventDto = eventMapper.toEventDto(eventRepository.save(event));
+        EventDto eventDto = EventMapper.toEventDto(eventRepository.save(event));
         if (!statisticsDtoList.isEmpty()) {
             eventDto.setViews(statisticsDtoList.get(0).getHits());
         } else {

@@ -16,7 +16,7 @@ import ru.practicum.exploreWithMe.user.dto.UserShortDto;
 @AllArgsConstructor
 @NoArgsConstructor
 public class EventDto {
-    private Long id;
+    private long id;
     @NotBlank
     @Size(max = 2000, message = "Аннотация не должна превышать 2000 символов")
     private String annotation;
@@ -33,7 +33,7 @@ public class EventDto {
     private LocationDto location;
     private boolean paid;
     @PositiveOrZero
-    private Long participantLimit;
+    private long participantLimit;
     private String publishedOn;
     private boolean requestModeration;
     private EventState state;

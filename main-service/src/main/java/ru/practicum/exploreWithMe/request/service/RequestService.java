@@ -25,7 +25,6 @@ import java.util.List;
 @RequiredArgsConstructor
 public class RequestService {
     private final RequestRepository requestRepository;
-    private final RequestMapper requestMapper;
     private final UserRepository userRepository;
     private final EventRepository eventRepository;
 
@@ -71,7 +70,7 @@ public class RequestService {
         Request savedRequest = requestRepository.save(request);
 
         log.info("Добавление запроса на событие с id ={} от пользователя с id ={}", eventId, userId);
-        return requestMapper.toRequestDto(savedRequest);
+        return RequestMapper.toRequestDto(savedRequest);
     }
 
     @Transactional
@@ -82,12 +81,12 @@ public class RequestService {
         Request canceledRequest = requestRepository.save(request);
 
         log.info("Отмена запроса с id ={} от пользователя с id ={}", requestId, userId);
-        return requestMapper.toRequestDto(canceledRequest);
+        return RequestMapper.toRequestDto(canceledRequest);
     }
 
     public List<RequestDto> getAllUserRequests(Long userId) {
         userRepository.findUserById(userId);
         log.info("Получение всех запросов на события от пользователя с id ={}", userId);
-        return requestMapper.toRequestDtoList(requestRepository.findAllByRequesterId(userId));
+        return RequestMapper.toRequestDtoList(requestRepository.findAllByRequesterId(userId));
     }
 }

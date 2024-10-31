@@ -13,6 +13,7 @@ import ru.practicum.exploreWithMe.compilation.repository.CompilationRepository;
 import ru.practicum.exploreWithMe.event.model.Event;
 import ru.practicum.exploreWithMe.event.repository.EventRepository;
 
+import java.util.ArrayList;
 import java.util.List;
 
 @Slf4j
@@ -22,18 +23,18 @@ import java.util.List;
 public class AdminCompilationService {
     private final CompilationRepository compilationRepository;
     private final EventRepository eventRepository;
-    private final CompilationMapper compilationMapper;
 
     @Transactional
     public CompilationDto addNewCompilationByAdmin(NewCompilationDto newCompilationDto) {
-        Compilation compilation = compilationMapper.toCompilation(newCompilationDto);
-        if (newCompilationDto.getEvents() != null) {
-            List<Event> events = eventRepository.findAllById(newCompilationDto.getEvents());
-            compilation.setEvents(events);
+        List<Event> events = new ArrayList<>();
+        if (newCompilationDto.getEvents() != null && !newCompilationDto.getEvents().isEmpty()) {
+            events = eventRepository.findAllById(newCompilationDto.getEvents());
         }
-        compilationRepository.save(compilation);
-        return compilationMapper.toCompilationDto(compilation);
+        Compilation newCompilation = compilationRepository.save(CompilationMapper.toCompilation(newCompilationDto, events));
+
+        return CompilationMapper.toCompilationDto(newCompilation);
     }
+
 
     @Transactional
     public CompilationDto updateCompilationByAdmin(Long compId, UpdateCompilationDto updateCompilationDto) {
@@ -51,7 +52,7 @@ public class AdminCompilationService {
         Compilation updatedCompilation = compilationRepository.save(compilation);
 
         log.info("Обновление поборки с id ={}", compId);
-        return compilationMapper.toCompilationDto(updatedCompilation);
+        return CompilationMapper.toCompilationDto(updatedCompilation);
     }
 
     @Transactional

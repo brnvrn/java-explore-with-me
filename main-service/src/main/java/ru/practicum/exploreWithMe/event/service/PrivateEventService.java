@@ -14,7 +14,10 @@ import ru.practicum.exploreWithMe.event.model.Event;
 import ru.practicum.exploreWithMe.event.model.EventRequestStatus;
 import ru.practicum.exploreWithMe.event.model.EventState;
 import ru.practicum.exploreWithMe.event.repository.EventRepository;
-import ru.practicum.exploreWithMe.exception.*;
+import ru.practicum.exploreWithMe.exception.ConflictException;
+import ru.practicum.exploreWithMe.exception.NotFoundException;
+import ru.practicum.exploreWithMe.exception.NotInitiatorException;
+import ru.practicum.exploreWithMe.exception.NotModerationException;
 import ru.practicum.exploreWithMe.request.dto.RequestDto;
 import ru.practicum.exploreWithMe.request.mapper.RequestMapper;
 import ru.practicum.exploreWithMe.request.model.Request;
@@ -24,7 +27,6 @@ import ru.practicum.exploreWithMe.user.model.User;
 import ru.practicum.exploreWithMe.user.repository.UserRepository;
 
 import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
@@ -35,34 +37,21 @@ import java.util.Objects;
 @RequiredArgsConstructor
 public class PrivateEventService {
     private final EventRepository eventRepository;
-    private final EventMapper eventMapper;
     private final UserRepository userRepository;
     private final CategoryRepository categoryRepository;
     private final RequestRepository requestRepository;
-    private final RequestMapper requestMapper;
 
     @Transactional
     public EventDto addNewEventPrivate(Long userId, NewEventDto newEventDto) {
         User user = userRepository.findUserById(userId);
         Category category = categoryRepository.findCategoryById(newEventDto.getCategory());
-        Event event = eventMapper.toEvent(newEventDto, category, user);
-        event.setCreatedOn(LocalDateTime.now());
-        event.setState(EventState.PENDING);
-        event.setLat(newEventDto.getLocation().getLat());
-        event.setLon(newEventDto.getLocation().getLon());
+        Event newEvent = EventMapper.toEvent(newEventDto, category, user);
+        newEvent.setCreatedOn(LocalDateTime.now());
+        newEvent.setState(EventState.PENDING);
+        EventDto eventFullDto = EventMapper.toEventDto(eventRepository.save(newEvent));
+        eventFullDto.setViews(0L);
 
-        Event savedEvent = eventRepository.save(event);
-
-        EventDto eventDto = eventMapper.toEventDto(savedEvent);
-
-        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
-        String formattedDate = savedEvent.getEventDate().format(formatter);
-        eventDto.setViews(0L);
-        eventDto.setLocation(new LocationDto(event.getLat(), event.getLon()));
-        eventDto.setState(EventState.PENDING);
-        eventDto.setEventDate(formattedDate);
-        log.info("Добавление события пользователя с id={} и параметрами: {}", userId, newEventDto);
-        return eventDto;
+        return eventFullDto;
     }
 
     public EventDto getEventByIdPrivate(Long userId, Long eventId) {
@@ -72,7 +61,7 @@ public class PrivateEventService {
             throw new NotInitiatorException("Просмотр возможен только инициатору события");
         }
         log.info("Просмотр события с id={} от пользователя с id={} на  ", eventId, userId);
-        return eventMapper.toEventDto(event);
+        return EventMapper.toEventDto(event);
     }
 
     public EventDto updateEventPrivate(Long userId, Long eventId, UpdateEventUserRequest updateEventUserRequest) {
@@ -124,7 +113,7 @@ public class PrivateEventService {
                     throw new NotModerationException("Некорректное значение.");
             }
         }
-        EventDto eventDto = eventMapper.toEventDto(eventRepository.save(event));
+        EventDto eventDto = EventMapper.toEventDto(eventRepository.save(event));
         eventDto.setViews(0L);
         return eventDto;
     }
@@ -134,7 +123,7 @@ public class PrivateEventService {
         Page<Event> page = eventRepository.findByInitiatorId(userId, PageRequest.of(from, size));
 
         log.info("Просмотр всех событий пользователя с id={} и параметрами: from={}, size={}", userId, from, size);
-        return eventMapper.toEventShortDtoList(page.toList());
+        return EventMapper.toEventShortDtoList(page.toList());
     }
 
     public List<RequestDto> getEventRequestsPrivate(Long userId, Long eventId) {
@@ -144,60 +133,49 @@ public class PrivateEventService {
             throw new NotFoundException("Вы не являетесь инициатором этого события.");
         }
         log.info("Просмотр запросов на событие с id={} от пользователя с id={}", eventId, userId);
-        return requestMapper.toRequestDtoList(requestRepository.findAllByEventId(eventId));
+        return RequestMapper.toRequestDtoList(requestRepository.findAllByEventId(eventId));
 
     }
 
     @Transactional
     public EventRequestStatusUpdateResult updateRequestsStatusPrivate(Long userId, Long eventId, EventRequestStatusUpdateRequest statusUpdateRequest) {
-        validateUserAndEvent(userId, eventId);
-        Event event = eventRepository.findEventById(eventId);
-
-        checkModerationRequirements(event);
-        checkParticipantLimit(event);
-
-        List<Request> requests = requestRepository.findAllById(statusUpdateRequest.getRequestIds());
-        validateRequestsExistence(requests, statusUpdateRequest.getRequestIds());
-
-        log.info("Изменение статуса запроса события с id={} от пользователя с id={} на  ", eventId, userId);
-        return processRequests(event, requests, statusUpdateRequest);
-    }
-
-    private void validateUserAndEvent(Long userId, Long eventId) {
         userRepository.findUserById(userId);
         Event event = eventRepository.findEventById(eventId);
 
-        if (!event.getInitiator().getId().equals(userId)) {
-            throw new NotFoundException("Вы не инициатор события");
+        if (event.getInitiator().getId() != userId) {
+            throw new NotFoundException("У вас нет прав на изменение этого события");
         }
-    }
 
-    private void checkModerationRequirements(Event event) {
         if (!event.getRequestModeration()) {
             throw new NotModerationException("Модерация запросов не требуется для этого события");
         }
-    }
 
-    private void checkParticipantLimit(Event event) {
-        if (event.getParticipantLimit() != null && event.getConfirmedRequests() >= event.getParticipantLimit()) {
-            throw new EventException("Лимит участников события превышен");
+        if (event.getParticipantLimit() > 0 && event.getConfirmedRequests() >= event.getParticipantLimit()) {
+            throw new ConflictException("Уже достигнут лимит участников для этого события");
         }
-    }
 
-    private void validateRequestsExistence(List<Request> requests, List<Long> requestIds) {
-        if (requests.size() != requestIds.size()) {
-            throw new NotFoundException("Запрос не найден");
+        List<Request> requests = requestRepository.findAllById(statusUpdateRequest.getRequestIds());
+        if (requests.size() != statusUpdateRequest.getRequestIds().size()) {
+            throw new NotFoundException("Один или несколько запросов не найдены");
         }
-    }
 
-    private EventRequestStatusUpdateResult processRequests(Event event, List<Request> requests, EventRequestStatusUpdateRequest statusUpdateRequest) {
         EventRequestStatusUpdateResult resultDto = new EventRequestStatusUpdateResult(new ArrayList<>(), new ArrayList<>());
-
         for (Request request : requests) {
             if (statusUpdateRequest.getStatus().equals(EventRequestStatus.REJECTED)) {
-                handleRejectedRequest(request, resultDto);
+                if (request.getStatus().equals(RequestStatus.CONFIRMED)) {
+                    throw new ConflictException("Запрос уже подтвержден и не может быть изменен.");
+                }
+                request.setStatus(RequestStatus.REJECTED);
+                resultDto.getRejectedRequests().add(RequestMapper.toRequestDto(request));
             } else if (statusUpdateRequest.getStatus().equals(EventRequestStatus.CONFIRMED)) {
-                handleConfirmedRequest(event, request, resultDto);
+                if (event.getConfirmedRequests() < event.getParticipantLimit()) {
+                    request.setStatus(RequestStatus.CONFIRMED);
+                    event.setConfirmedRequests(event.getConfirmedRequests() + 1);
+                    resultDto.getConfirmedRequests().add(RequestMapper.toRequestDto(request));
+                } else {
+                    request.setStatus(RequestStatus.REJECTED);
+                    resultDto.getRejectedRequests().add(RequestMapper.toRequestDto(request));
+                }
             }
         }
 
@@ -205,25 +183,5 @@ public class PrivateEventService {
         eventRepository.save(event);
 
         return resultDto;
-    }
-
-    private void handleRejectedRequest(Request request, EventRequestStatusUpdateResult resultDto) {
-        if (request.getStatus().equals(RequestStatus.CONFIRMED)) {
-            throw new EventException("Подтвержденный запрос нельзя изменить");
-        }
-
-        request.setStatus(RequestStatus.REJECTED);
-        resultDto.getRejectedRequests().add(requestMapper.toRequestDto(request));
-    }
-
-    private void handleConfirmedRequest(Event event, Request request, EventRequestStatusUpdateResult resultDto) {
-        if (event.getConfirmedRequests() < event.getParticipantLimit()) {
-            request.setStatus(RequestStatus.CONFIRMED);
-            event.setConfirmedRequests(event.getConfirmedRequests() + 1);
-            resultDto.getConfirmedRequests().add(requestMapper.toRequestDto(request));
-        } else {
-            request.setStatus(RequestStatus.REJECTED);
-            resultDto.getRejectedRequests().add(requestMapper.toRequestDto(request));
-        }
     }
 }
