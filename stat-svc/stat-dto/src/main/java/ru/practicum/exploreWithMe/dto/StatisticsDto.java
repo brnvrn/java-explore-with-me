@@ -1,12 +1,12 @@
 package ru.practicum.exploreWithMe.dto;
 
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.Getter;
+import lombok.Setter;
+import lombok.experimental.Accessors;
 
-@NoArgsConstructor
-@AllArgsConstructor
-@Data
+@Getter
+@Setter
+@Accessors(chain = true)
 public class StatisticsDto {
     private String app;
     private String uri;

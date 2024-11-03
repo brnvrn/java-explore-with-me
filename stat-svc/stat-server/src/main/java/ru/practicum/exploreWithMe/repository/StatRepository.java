@@ -9,31 +9,35 @@ import java.time.LocalDateTime;
 import java.util.List;
 
 public interface StatRepository extends JpaRepository<EndpointHits, Long> {
+
     @Query("SELECT new ru.practicum.exploreWithMe.model.Statistics(e.app, e.uri, COUNT(DISTINCT e.ip)) " +
             "FROM EndpointHits e " +
-            "WHERE e.timestamp BETWEEN :start AND :end " +
-            "GROUP BY e.app, e.uri")
+            "WHERE e.timestamp BETWEEN ?1 AND ?2 " +
+            "GROUP BY e.app, e.uri " +
+            "ORDER BY COUNT(DISTINCT e.ip) DESC")
     List<Statistics> getUniqueIpStatisticsForPeriod(LocalDateTime start, LocalDateTime end);
 
+    @Query("SELECT new ru.practicum.exploreWithMe.model.Statistics(e.app, e.uri, COUNT(e.ip)) " +
+            "FROM EndpointHits e " +
+            "WHERE e.uri IN ?1 " +
+            "AND e.timestamp BETWEEN ?2 AND ?3 " +
+            "GROUP BY e.app, e.uri " +
+            "ORDER BY COUNT(e.ip) DESC")
+    List<Statistics> getUniqueIpStatisticsForPeriodAndUris(String[] uris, LocalDateTime start, LocalDateTime end);
 
     @Query("SELECT new ru.practicum.exploreWithMe.model.Statistics(e.app, e.uri, COUNT(DISTINCT e.ip)) " +
             "FROM EndpointHits e " +
-            "WHERE e.timestamp BETWEEN :start AND :end " +
-            "AND (:uris IS NULL OR e.uri IN :uris) " +
-            "GROUP BY e.app, e.uri")
-    List<Statistics> getUniqueIpStatisticsForPeriodAndUris(LocalDateTime start, LocalDateTime end, List<String> uris);
-
-    @Query("SELECT new ru.practicum.exploreWithMe.model.Statistics(e.app, e.uri, COUNT(e)) " +
-            "FROM EndpointHits e " +
-            "WHERE e.timestamp BETWEEN :start AND :end " +
-            "AND (:uris IS NULL OR e.uri IN :uris) " +
+            "WHERE e.uri IN ?1 " +
+            "AND e.timestamp BETWEEN ?2 AND ?3 " +
             "GROUP BY e.app, e.uri " +
-            "ORDER BY COUNT(e) DESC")
-    List<Statistics> getStatisticsForPeriodAndUris(LocalDateTime start, LocalDateTime end, List<String> uris);
+            "ORDER BY COUNT(DISTINCT e.ip) DESC")
+    List<Statistics> getAllStatDataViewInUrisAndDistinctIp(String[] uris, LocalDateTime start, LocalDateTime end);
 
-    @Query("SELECT new ru.practicum.exploreWithMe.model.Statistics(e.app, e.uri, COUNT(e)) " +
+    @Query("SELECT new ru.practicum.exploreWithMe.model.Statistics(e.app, e.uri, COUNT(e.ip)) " +
             "FROM EndpointHits e " +
-            "WHERE e.timestamp BETWEEN :start AND :end " +
-            "GROUP BY e.app, e.uri")
+            "WHERE e.timestamp BETWEEN ?1 AND ?2 " +
+            "GROUP BY e.app, e.uri " +
+            "ORDER BY COUNT(e.ip) DESC")
     List<Statistics> getStatisticsForPeriod(LocalDateTime start, LocalDateTime end);
+
 }
