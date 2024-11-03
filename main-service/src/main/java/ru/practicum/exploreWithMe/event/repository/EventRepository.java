@@ -12,13 +12,12 @@ import java.util.List;
 
 public interface EventRepository extends JpaRepository<Event, Long> {
 
-    @Query(value = "SELECT * FROM events AS e WHERE " +
-            "(CAST(:users AS BIGINT) is null or e.initiator_id in (CAST(:users AS BIGINT))) " +
-            "AND (CAST(:states AS TEXT) is null or e.event_state in (CAST(:states AS TEXT))) " +
-            "AND (CAST(:categories AS BIGINT) is null or e.category_id in (CAST(:categories AS BIGINT))) " +
-            "AND (CAST(:rangeStart AS TIMESTAMP) is null or e.event_date >= CAST(:rangeStart AS TIMESTAMP)) " +
-            "AND (CAST(:rangeEnd AS TIMESTAMP) is null or e.event_date <= CAST(:rangeEnd  AS TIMESTAMP)) ",
-            nativeQuery = true)
+    @Query(value = "select * from events as e where " +
+            "(cast(:users as BIGINT) is null or e.initiator_id in (cast(:users as BIGINT))) " +
+            "and (cast(:states as TEXT) is null or e.event_state in (cast(:states as TEXT))) " +
+            "and (cast(:categories as BIGINT) is null or e.category_id in (cast(:categories as BIGINT))) " +
+            "and (cast(:rangeStart as TIMESTAMP) is null or e.event_date >= cast(:rangeStart as TIMESTAMP)) " +
+            "and (cast(:rangeEnd as TIMESTAMP) is null or e.event_date <= cast(:rangeEnd  as TIMESTAMP)) ", nativeQuery = true)
     List<Event> searchEventByAdmin(@Param("users") List<Long> users,
                                    @Param("states") List<String> states,
                                    @Param("categories") List<Long> categories,
@@ -28,14 +27,12 @@ public interface EventRepository extends JpaRepository<Event, Long> {
 
     List<Event> findAllByInitiatorId(Long id, Pageable pageable);
 
-    @Query(value = "SELECT * FROM events AS e " +
-            "WHERE e.event_state = 'PUBLISHED' " +
-            "AND (:text IS NULL OR e.annotation ILIKE CONCAT('%', :text, '%') " +
-            "OR e.description ILIKE CONCAT('%', :text, '%')) " +
-            "AND (:categories IS NULL OR e.category_id IN (:categories)) " +
-            "AND (:paid IS NULL OR e.paid = :paid) " +
-            "AND (e.event_date BETWEEN :rangeStart AND :rangeEnd)",
-            nativeQuery = true)
+    @Query(value = "select * from events as e where e.event_state = 'PUBLISHED' " +
+            "and (cast(:text as TEXT) is null or e.annotation ilike concat('%',cast(:text as TEXT),'%') " +
+            "or e.description ilike concat('%',cast(:text as TEXT),'%')) " +
+            "and (cast(:categories as BIGINT) is null or e.category_id in (cast(:categories as BIGINT))) " +
+            "and (cast(:paid as BOOLEAN) is null or e.paid = cast(:paid as BOOLEAN)) " +
+            "and (e.event_date between cast(:rangeStart as TIMESTAMP) and cast(:rangeEnd as TIMESTAMP))", nativeQuery = true)
     List<Event> searchEventsPublic(@Param("text") String text,
                                    @Param("categories") List<Long> categories,
                                    @Param("paid") Boolean paid,
