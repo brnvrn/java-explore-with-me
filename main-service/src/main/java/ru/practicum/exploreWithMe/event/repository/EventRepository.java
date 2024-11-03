@@ -27,6 +27,7 @@ public interface EventRepository extends JpaRepository<Event, Long> {
                                    Pageable pageable);
 
     List<Event> findAllByInitiatorId(Long id, Pageable pageable);
+
     @Query(value = "SELECT * FROM events AS e " +
             "WHERE e.event_state = 'PUBLISHED' " +
             "AND (:text IS NULL OR e.annotation ILIKE CONCAT('%', :text, '%') " +
@@ -41,5 +42,6 @@ public interface EventRepository extends JpaRepository<Event, Long> {
                                    @Param("rangeStart") LocalDateTime rangeStart,
                                    @Param("rangeEnd") LocalDateTime rangeEnd,
                                    Pageable pageable);
+
     Boolean existsByEventCategoryId(Long catId);
 }

@@ -8,6 +8,7 @@ import java.util.List;
 public interface RequestRepository extends JpaRepository<Request, Long> {
 
     List<Request> findByEventIdOrderByCreatedDesc(Long id);
+
     Request findByRequesterIdAndEventId(Long requesterId, Long eventId);
 
     List<Request> findByRequesterIdOrderByCreatedDesc(Long id);
