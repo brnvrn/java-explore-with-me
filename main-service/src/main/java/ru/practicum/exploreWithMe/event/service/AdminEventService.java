@@ -48,7 +48,7 @@ public class AdminEventService {
                         "categories={}, rangeStart={}, rangeEnd={}, from={}, size={}", users, states, categories,
                 rangeStart, rangeEnd, from, size);
 
-        return eventRepository.searchEventByAdmin(users, states, categories, rangeStart, rangeEnd, page).stream()
+        return eventRepository.getAllEventsByAdmin(users, states, categories, rangeStart, rangeEnd, page).stream()
                 .toList().stream()
                 .map(eventMapper::toEventFullDto)
                 .toList();

@@ -48,11 +48,11 @@ public class EventService {
         if (rangeStart != null && rangeEnd != null && rangeEnd.isBefore(rangeStart)) {
             throw new BadRequestException("Дата окончания поиска не может быть раньше даты начала");
         }
-        sendHttpRequest(servletRequest);
+        sendHitEventData(servletRequest);
         LocalDateTime start = rangeStart != null ? rangeStart : LocalDateTime.now();
         LocalDateTime end = rangeEnd != null ? rangeEnd : LocalDateTime.now().plusYears(10);
         Pageable page = PageRequest.of(from / size, size);
-        List<Event> events = eventRepository.searchEventsPublic(text, categories, paid, start, end, page);
+        List<Event> events = eventRepository.getPublicEvents(text, categories, paid, start, end, page);
         if (events.isEmpty()) {
             return Collections.emptyList();
         }
@@ -80,14 +80,13 @@ public class EventService {
         if (!event.getState().equals(EventState.PUBLISHED)) {
             throw new NotFoundException("Событие не было опубликовано");
         }
-        sendHttpRequest(servletRequest);
+        sendHitEventData(servletRequest);
         Long views = getUniqueEventViews(servletRequest, event);
         event.setViews(views);
         return eventMapper.toEventFullDto(event);
     }
 
-    @Transactional
-    public void sendHttpRequest(HttpServletRequest request) {
+    public void sendHitEventData(HttpServletRequest request) {
         EndpointHitsDto endpointHitsDto = new EndpointHitsDto()
                 .setApp("main-service")
                 .setIp(request.getRemoteAddr())
@@ -96,7 +95,7 @@ public class EventService {
         statsClient.sendHttpRequest(endpointHitsDto);
     }
 
-    public Long getUniqueEventViews(HttpServletRequest request, Event event) {
+    public long getUniqueEventViews(HttpServletRequest request, Event event) {
         LocalDateTime start = event.getPublishedOn().withNano(0);
         LocalDateTime end = LocalDateTime.now().withNano(0);
         String[] uri = new String[]{request.getRequestURI()};
