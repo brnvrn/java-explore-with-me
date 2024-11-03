@@ -39,15 +39,15 @@ public class StatService {
         List<Statistics> statistics;
         if (uris[0].equals("0")) {
             if (unique) {
-                statistics = statRepository.getUniqueIpStatisticsForPeriod(start, end);
+                statistics = statRepository.getAllStatDataViewWithDistinctIp(start, end);
             } else {
-                statistics = statRepository.getStatisticsForPeriod(start, end);
+                statistics = statRepository.getAllStatDataView(start, end);
             }
         } else {
             if (unique) {
                 statistics = statRepository.getAllStatDataViewInUrisAndDistinctIp(uris, start, end);
             } else {
-                statistics = statRepository.getUniqueIpStatisticsForPeriodAndUris(uris, start, end);
+                statistics = statRepository.getAllStatDataViewInUris(uris, start, end);
             }
         }
         return statistics.stream()

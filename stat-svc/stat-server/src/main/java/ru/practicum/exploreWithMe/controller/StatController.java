@@ -22,6 +22,9 @@ public class StatController {
     @ResponseStatus(HttpStatus.CREATED)
     @PostMapping("/hit")
     public void saveEndpointHit(@RequestBody @Valid EndpointHitsDto endpointHitsDto) {
+        if (endpointHitsDto.getUri() == null) {
+            endpointHitsDto.setUri("0");
+        }
         log.info("Получен POST-запрос на сохранение статистики для эндпоинта: {}", endpointHitsDto);
         statService.saveEndpointHit(endpointHitsDto);
     }
