@@ -18,12 +18,13 @@ import java.util.List;
 @RequiredArgsConstructor
 public class StatController {
     private final StatService statService;
+    public static final String EMPTY = "0";
 
     @ResponseStatus(HttpStatus.CREATED)
     @PostMapping("/hit")
     public void saveEndpointHit(@RequestBody @Valid EndpointHitsDto endpointHitsDto) {
         if (endpointHitsDto.getUri() == null) {
-            endpointHitsDto.setUri("0");
+            endpointHitsDto.setUri(EMPTY);
         }
         log.info("Получен POST-запрос на сохранение статистики для эндпоинта: {}", endpointHitsDto);
         statService.saveEndpointHit(endpointHitsDto);
@@ -32,7 +33,7 @@ public class StatController {
     @GetMapping("/stats")
     public List<StatisticsDto> getStatistics(@RequestParam @DateTimeFormat(pattern = "yyyy-MM-dd HH:mm:ss") LocalDateTime start,
                                              @RequestParam @DateTimeFormat(pattern = "yyyy-MM-dd HH:mm:ss") LocalDateTime end,
-                                             @RequestParam(required = false, defaultValue = "0") String[] uris,
+                                             @RequestParam(required = false, defaultValue = EMPTY) String[] uris,
                                              @RequestParam(required = false, defaultValue = "false") boolean unique) {
         log.info("Получен GET-запрос на получение статистики с параметрами: start={}, end={}, uris={}, unique={}",
                 start, end, uris, unique);

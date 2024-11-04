@@ -20,6 +20,7 @@ import java.util.Objects;
 @Service
 public class StatClient {
     private final RestTemplate restTemplate;
+    public static final String EMPTY = "0";
 
     public StatClient(@Value("${stats-server.url}") String statsServerUrl, RestTemplateBuilder builder) {
         restTemplate = builder
@@ -42,7 +43,7 @@ public class StatClient {
                                         String[] uris,
                                         Boolean unique) {
         if (uris == null) {
-            uris = new String[]{"0"};
+            uris = new String[]{EMPTY};
         }
         Map<String, Object> parameters = Map.of(
                 "start", start,
