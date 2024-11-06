@@ -4,20 +4,23 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.web.client.RestTemplateBuilder;
 import org.springframework.http.*;
 import org.springframework.http.client.HttpComponentsClientHttpRequestFactory;
-import org.springframework.lang.Nullable;
 import org.springframework.stereotype.Service;
-import org.springframework.web.client.HttpStatusCodeException;
+import org.springframework.web.client.RestClientException;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.util.DefaultUriBuilderFactory;
 import ru.practicum.exploreWithMe.dto.EndpointHitsDto;
+import ru.practicum.exploreWithMe.dto.StatisticsDto;
 
 import java.time.LocalDateTime;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
 @Service
 public class StatClient {
     private final RestTemplate restTemplate;
+    public static final String EMPTY = "0";
 
     public StatClient(@Value("${stats-server.url}") String statsServerUrl, RestTemplateBuilder builder) {
         restTemplate = builder
@@ -27,58 +30,41 @@ public class StatClient {
     }
 
     public void sendHttpRequest(EndpointHitsDto endpointHitsDto) {
-        makeAndSendRequest(HttpMethod.POST, "/hit", null, endpointHitsDto);
+        try {
+            HttpEntity<EndpointHitsDto> requestEntity = new HttpEntity<>(endpointHitsDto, defaultHeaders());
+            restTemplate.postForEntity("/hit", requestEntity, HttpStatus.class);
+        } catch (RestClientException exception) {
+            throw new IllegalArgumentException("Ошибка соединения с сервером");
+        }
     }
 
-    public ResponseEntity<Object> getStats(LocalDateTime start, LocalDateTime end, @Nullable String[] uris, @Nullable Boolean unique) {
+    public List<StatisticsDto> getStats(LocalDateTime start,
+                                        LocalDateTime end,
+                                        String[] uris,
+                                        Boolean unique) {
         if (uris == null) {
-            throw new IllegalArgumentException("Параметр uris не может быть null");
+            uris = new String[]{EMPTY};
         }
-        if (unique == null) {
-            throw new IllegalArgumentException("Параметр unique не может быть null");
-        }
-
         Map<String, Object> parameters = Map.of(
                 "start", start,
                 "end", end,
                 "uris", uris,
                 "unique", unique
         );
-        return makeAndSendRequest(HttpMethod.GET, "/stats?start={start}&end={end}&uris={uris}&unique={unique}", parameters, null);
-    }
-
-    private <T> ResponseEntity<Object> makeAndSendRequest(HttpMethod method, String path, @Nullable Map<String, Object> parameters, @Nullable T body) {
-        HttpEntity<T> requestEntity = new HttpEntity<>(body, defaultHeaders());
-
-        ResponseEntity<Object> statsServerResponse;
+        ResponseEntity<StatisticsDto[]> responseListDto;
         try {
-            if (parameters != null) {
-                statsServerResponse = restTemplate.exchange(path, method, requestEntity, Object.class, parameters);
-            } else {
-                statsServerResponse = restTemplate.exchange(path, method, requestEntity, Object.class);
-            }
-        } catch (HttpStatusCodeException e) {
-            return ResponseEntity.status(e.getStatusCode()).body(e.getResponseBodyAsByteArray());
+            responseListDto = restTemplate.getForEntity("/stats?start={start}&end={end}&uris={uris}&unique={unique}",
+                    StatisticsDto[].class, parameters);
+        } catch (RestClientException exception) {
+            throw new IllegalArgumentException("Ошибка соединения с сервером");
         }
-        return prepareStatsResponse(statsServerResponse);
+        return Arrays.asList(Objects.requireNonNull(responseListDto.getBody()));
     }
-
 
     private HttpHeaders defaultHeaders() {
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);
         headers.setAccept(List.of(MediaType.APPLICATION_JSON));
         return headers;
-    }
-
-    private static ResponseEntity<Object> prepareStatsResponse(ResponseEntity<Object> response) {
-        if (response.getStatusCode().is2xxSuccessful()) {
-            return response;
-        }
-        ResponseEntity.BodyBuilder responseBuilder = ResponseEntity.status(response.getStatusCode());
-        if (response.hasBody()) {
-            return responseBuilder.body(response.getBody());
-        }
-        return responseBuilder.build();
     }
 }

@@ -4,6 +4,7 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.format.annotation.DateTimeFormat;
+import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 import ru.practicum.exploreWithMe.dto.EndpointHitsDto;
 import ru.practicum.exploreWithMe.dto.StatisticsDto;
@@ -17,17 +18,22 @@ import java.util.List;
 @RequiredArgsConstructor
 public class StatController {
     private final StatService statService;
+    public static final String EMPTY = "0";
 
+    @ResponseStatus(HttpStatus.CREATED)
     @PostMapping("/hit")
-    public EndpointHitsDto saveEndpointHit(@RequestBody @Valid EndpointHitsDto endpointHitsDto) {
+    public void saveEndpointHit(@RequestBody @Valid EndpointHitsDto endpointHitsDto) {
+        if (endpointHitsDto.getUri() == null) {
+            endpointHitsDto.setUri(EMPTY);
+        }
         log.info("Получен POST-запрос на сохранение статистики для эндпоинта: {}", endpointHitsDto);
-        return statService.saveEndpointHit(endpointHitsDto);
+        statService.saveEndpointHit(endpointHitsDto);
     }
 
     @GetMapping("/stats")
     public List<StatisticsDto> getStatistics(@RequestParam @DateTimeFormat(pattern = "yyyy-MM-dd HH:mm:ss") LocalDateTime start,
                                              @RequestParam @DateTimeFormat(pattern = "yyyy-MM-dd HH:mm:ss") LocalDateTime end,
-                                             @RequestParam(required = false) List<String> uris,
+                                             @RequestParam(required = false, defaultValue = EMPTY) String[] uris,
                                              @RequestParam(required = false, defaultValue = "false") boolean unique) {
         log.info("Получен GET-запрос на получение статистики с параметрами: start={}, end={}, uris={}, unique={}",
                 start, end, uris, unique);
